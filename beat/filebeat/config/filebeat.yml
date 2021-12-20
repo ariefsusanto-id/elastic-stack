@@ -1,0 +1,23 @@
+filebeat.inputs:
+#- type: container
+#  paths:
+#    - '/var/lib/docker/containers/*/*.log'
+
+#- type: log
+#  enabled: true
+#  paths:
+#    - /logs/**/*
+
+- type: log
+  enabled: true
+  paths: 
+    - /logs/haproxy
+
+- type: log
+  enabled: true
+  paths:
+    - /logs/erp
+  
+
+output.logstash:  
+   hosts: ["10.10.15.54:5044"]

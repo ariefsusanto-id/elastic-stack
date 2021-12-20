@@ -1,0 +1,101 @@
+metricbeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    # Reload module configs as they change:
+    reload.enabled: false
+
+metricbeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+metricbeat.modules:
+- module: docker
+  metricsets:
+    - "container"
+    - "cpu"
+    - "diskio"
+    - "event"
+    - "healthcheck"
+    - "info"
+    - "image"
+    - "memory"
+    - "network"
+  hosts: ["unix:///var/run/docker.sock"]
+  period: 5s
+  enabled: true
+
+- module: system
+  metricsets: 
+    - "cpu"
+    - "load"
+    - "memory"
+    - "network"
+    - "process"
+    - "process_summary"
+    - "core"
+    - "diskio"
+    - "socket"
+    - "service"
+    - "filesystem"
+    - "uptime"
+    - "fsstat"
+    - "socker"
+  processes: ['.*']
+  process.include_top_n:
+    by_cpu: 5
+    by_memory: 5
+  period: 10s
+  cpu.metrics:  ["percentages","normalized_percentages"]
+  core.metrics: ["percentages"]
+
+- module: system
+  period: 1m
+  metricsets:
+    - filesystem
+    - fsstat
+  processors:
+  - drop_event.when.regexp:
+      system.filesystem.mount_point: '^/(sys|cgroup|proc|dev|etc|host|lib)($|/)'
+
+
+- module: haproxy
+  metricsets: ["info", "stat"]
+  period: 10s
+  # TCP socket, UNIX socket, or HTTP address where HAProxy stats are reported
+  # TCP socket
+  # hosts: ["tcp://127.0.0.1:14567"]
+  # UNIX socket
+  #hosts: ["unix:///path/to/haproxy.sock"]
+  # Stats page
+  hosts: ["https://10.10.15.54:9100"]
+  username : haproxy
+  password : haproxy
+  enabled: true
+
+- module: rabbitmq
+  metricsets: ["node", "queue", "connection"]
+  enabled: true
+  period: 10s
+  hosts: ["10.10.15.55:15672"]
+  username: rabbitadmin
+  password: roticane
+
+processors:
+  - add_cloud_metadata: ~
+
+setup.dashboards:
+  enabled: true
+
+setup.kibana:
+  host: "10.10.15.54:5601"
+  username: "elastic"
+  password: "changeme"
+  
+#output.logstash:
+#  hosts: ["10.10.15.54:5044"]
+
+output.elasticsearch:
+  hosts: "10.10.15.54:9200"
+  username: "elastic"
+  password: "changeme"
